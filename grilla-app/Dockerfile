@@ -1,31 +1,16 @@
-# Stage 1: Build the React application
 FROM node:20-alpine AS build
-
 WORKDIR /app
-
-# Copy package.json and package-lock.json
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+ENV VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+ENV VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
 COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Copy the rest of the application source code
+RUN npm ci
 COPY . .
-
-# Build the application
 RUN npm run build
 
-# Stage 2: Serve the application using Nginx
 FROM nginx:stable-alpine
-
-# Copy the build output from the build stage
-COPY --from=build /app/dist /usr/share/nginx/html
-
-# Copy the Nginx configuration file and overwrite the default config
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
-
-# Expose port 80
+COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 80
-
-# Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
